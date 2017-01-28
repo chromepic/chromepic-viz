@@ -1,8 +1,7 @@
-import png
 import os
 import tkinter
 
-from PIL import ImageTk
+from PIL import Image
 
 
 def get_all_screenshot_names(directory):
@@ -17,4 +16,4 @@ def get_all_screenshot_names(directory):
 
 
 def read_screenshot(path):
-    return ImageTk.PhotoImage(file=path)
+    return Image.open(path)
