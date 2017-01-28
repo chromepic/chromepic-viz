@@ -21,6 +21,8 @@ class LogViewer(Frame):
         self.parent.title("Simple")
         self.pack(fill=BOTH, expand=True)
 
+        self.grid_columnconfigure(0, weight=1)
+
         screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/11_8_2016__19_26_14_0x3fabb44008c0'
         all_screenshots = logs.get_all_screenshot_names(screenshot_dir)
 
@@ -28,20 +30,30 @@ class LogViewer(Frame):
         # to keep them from getting deleted by garbage collection
         self.tk_imgs = [None for _ in range(3)]
 
-        self.displays = [Canvas(self, bd=0, highlightthickness=0) for _ in range(3)]
-
+        # read snapshots
         for i in range(3):
             pil_img = logs.read_screenshot(os.path.join(screenshot_dir, all_screenshots[i]))
             self.pil_imgs[i] = pil_img
             self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
 
-        self.displays[0].create_image(0, 0, image=self.tk_imgs[0], anchor=NW, tags="IMG")
-        self.displays[0].pack(fill=BOTH, expand=True)
+        # for displaying the snapshots
+        self.displays = [Canvas(self, bd=0, highlightthickness=0) for _ in range(3)]
 
-        self.displays[0].bind("<Configure>", self.resize)
+        self.resizing_methods = []
+        self.resizing_methods.append(lambda event: self.resize(0, event))
+        self.resizing_methods.append(lambda event: self.resize(1, event))
+        self.resizing_methods.append(lambda event: self.resize(2, event))
 
-    def resize(self, event):
-        canvas_i = 0
+        for i in range(3):
+            self.displays[i].create_image(0, 0, image=self.tk_imgs[i], anchor=NW, tags="IMG")
+            self.displays[i].bind("<Configure>", self.resizing_methods[i])
+
+        padx, pady = 20, 20
+        self.displays[0].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady, sticky=N + S + E + W)
+        self.displays[1].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady, sticky=N + S + E + W)
+        self.displays[2].grid(row=1, column=3, columnspan=1, rowspan=1, padx=padx, sticky=N + S + E + W)
+
+    def resize(self, canvas_i, event):
         self.tk_imgs[canvas_i] = ImageTk.PhotoImage(self.resize_keep_aspect(event.width, self.pil_imgs[canvas_i]))
         self.displays[canvas_i].delete("IMG")
         self.displays[canvas_i].create_image(0, 0, image=self.tk_imgs[canvas_i], anchor=NW, tags="IMG")
@@ -55,7 +67,7 @@ class LogViewer(Frame):
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    root.geometry("500x300+300+300")
+    root.geometry("1000x550+200+200")
     root.mainloop()
 
 
