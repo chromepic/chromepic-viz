@@ -43,21 +43,25 @@ class LogViewer(Frame):
         self.switch_current_image(1)
 
         self.resizing_methods = []
-        self.resizing_methods.append(lambda event: self.resize(0, event))
-        self.resizing_methods.append(lambda event: self.resize(1, event))
-        self.resizing_methods.append(lambda event: self.resize(2, event))
+        self.resizing_methods.append(lambda event: self.resize(0, event.width))
+        self.resizing_methods.append(lambda event: self.resize(1, event.width))
+        self.resizing_methods.append(lambda event: self.resize(2, event.width))
 
         for i in range(3):
             self.displays[i].bind("<Configure>", self.resizing_methods[i])
 
         padx, pady = 20, 20
-        self.displays[0].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady, sticky=N + S + E + W)
-        self.displays[1].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady, sticky=N + S + E + W)
+        # previous
+        self.displays[0].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady, sticky=N + S + E + W)
+        # current
+        self.displays[1].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady, sticky=N + S + E + W)
+        # next
         self.displays[2].grid(row=1, column=3, columnspan=1, rowspan=1, padx=padx, sticky=N + S + E + W)
 
-    def resize(self, canvas_i, event):
+    def resize(self, canvas_i, width):
         img_i = canvas_i + self.current_index - 1
-        self.tk_imgs[img_i] = ImageTk.PhotoImage(self.resize_keep_aspect(event.width, self.pil_imgs[img_i]))
+        if self.tk_imgs[img_i].width() != width:  # it may already have been converted to correct size
+            self.tk_imgs[img_i] = ImageTk.PhotoImage(self.resize_keep_aspect(width, self.pil_imgs[img_i]))
         self.displays[canvas_i].delete("IMG")
         self.displays[canvas_i].create_image(0, 0, image=self.tk_imgs[img_i], anchor=NW, tags="IMG")
 
@@ -67,10 +71,22 @@ class LogViewer(Frame):
         return img.resize((new_width, hsize), PIL.Image.ANTIALIAS)
 
     def init_navigation(self):
-        w = Scale(self, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL, command=self.switch_current_image)
+        self._job = None
+        w = Scale(self, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL, command=self.on_switch_image)
         w.grid(row=3, column=0, columnspan=4, padx=20, pady=20, sticky=N + S + E + W)
 
+    def on_switch_image(self, index):
+        # this logic makes the image switch only if a certain amount of time has elapsed since the last scale change,
+        # for performance reasons.
+        # (see http://stackoverflow.com/questions/3966303/tkinter-slider-how-to-trigger-the-event-only-when-the-iteraction-is-complete)
+
+        if self._job:
+            self.parent.after_cancel(self._job)
+        self._job = self.parent.after(50, self.switch_current_image, index)
+
     def switch_current_image(self, index):
+        self._job = None
+
         index = int(index)
         self.current_index = index
         for i in range(index - 1, index + 2):
@@ -78,6 +94,7 @@ class LogViewer(Frame):
                 # out of bounds
                 continue
 
+            # load layily
             if i not in self.pil_imgs:
                 # img not loaded yet
                 if i == 0:
@@ -85,20 +102,19 @@ class LogViewer(Frame):
                     pil_img = self.dummy_img
                 else:
                     pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.all_screenshots[i - 1]))
-            else:
-                pil_img = self.pil_imgs[i]
 
-            self.pil_imgs[i] = pil_img
-            self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
+                self.pil_imgs[i] = pil_img
+                self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
+
             canvas_i = i - index + 1
-            self.displays[canvas_i].create_image(0, 0, image=self.tk_imgs[i], anchor=NW, tags="IMG")
+            self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
 
 
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
     hw_ratio = 1.907801
-    width = 1100
+    width = 1050
     height = int(width / hw_ratio)
     root.geometry("{}x{}+200+200".format(width, height))
     root.mainloop()
