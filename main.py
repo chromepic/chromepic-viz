@@ -38,8 +38,10 @@ class LogViewer(Frame):
         self.tk_imgs = {}
 
         # for displaying the snapshots
-        self.display_frames = [Frame()]
-        self.displays = [Canvas(self, bd=0, highlightthickness=0) for _ in range(3)]
+        self.display_frames = [Frame(self) for _ in range(3)]
+        self.displays = [Canvas(self.display_frames[i], bd=0, highlightthickness=0) for i in range(3)]
+        # text labels
+        self.display_labels = [Label(self.display_frames[i], text='') for i in range(3)]
 
         self.dummy_img = PIL.Image.new('RGBA', (1, 1), "white")
 
@@ -55,11 +57,20 @@ class LogViewer(Frame):
 
         padx, pady = 20, 20
         # previous
-        self.displays[0].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady, sticky=N + S + E + W)
+        self.display_frames[0].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady,
+                                    sticky=N + S + E + W)
         # current
-        self.displays[1].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady, sticky=N + S + E + W)
+        self.display_frames[1].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady,
+                                    sticky=N + S + E + W)
         # next
-        self.displays[2].grid(row=1, column=3, columnspan=1, rowspan=1, padx=padx, sticky=N + S + E + W)
+        self.display_frames[2].grid(row=1, column=3, columnspan=1, rowspan=1, padx=padx, sticky=N + S + E + W)
+
+        for i in range(3):
+            self.display_labels[i].pack()
+            self.display_labels[i].config(font=("Arial", 18))
+
+        for i in range(3):
+            self.displays[i].pack(fill=BOTH, expand=True)
 
     def resize(self, canvas_i, width):
         img_i = canvas_i + self.current_index - 1
@@ -112,6 +123,10 @@ class LogViewer(Frame):
 
             canvas_i = i - index + 1
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
+            if 0 <= i - 1 < len(self.all_screenshots):
+                self.display_labels[canvas_i]['text'] = self.all_screenshots[i - 1]
+            else:
+                self.display_labels[canvas_i]['text'] = ''
 
 
 def main():
