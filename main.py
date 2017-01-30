@@ -30,6 +30,9 @@ class LogViewer(Frame):
         self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/11_8_2016__19_26_14_0x3fabb44008c0'
         self.all_screenshots = logs.get_all_screenshot_names(self.screenshot_dir)
 
+        # assuming they're named "snapshot_x.png"
+        self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
+
         self.pil_imgs = {}
         # to keep them from getting deleted by garbage collection
         self.tk_imgs = {}
@@ -38,7 +41,7 @@ class LogViewer(Frame):
         self.display_frames = [Frame()]
         self.displays = [Canvas(self, bd=0, highlightthickness=0) for _ in range(3)]
 
-        self.dummy_img = PIL.Image.new('RGB', (1, 1))
+        self.dummy_img = PIL.Image.new('RGBA', (1, 1), "white")
 
         self.switch_current_image(1)
 
@@ -82,7 +85,8 @@ class LogViewer(Frame):
 
         if self._job:
             self.parent.after_cancel(self._job)
-        self._job = self.parent.after(50, self.switch_current_image, index)
+        delay = 100
+        self._job = self.parent.after(delay, self.switch_current_image, index)
 
     def switch_current_image(self, index):
         self._job = None
@@ -90,14 +94,14 @@ class LogViewer(Frame):
         index = int(index)
         self.current_index = index
         for i in range(index - 1, index + 2):
-            if not (0 <= i <= len(self.all_screenshots)):
+            if not (0 <= i <= len(self.all_screenshots) + 1):
                 # out of bounds
                 continue
 
-            # load layily
+            # load lazily
             if i not in self.pil_imgs:
                 # img not loaded yet
-                if i == 0:
+                if i == 0 or i == len(self.all_screenshots) + 1:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
@@ -113,9 +117,9 @@ class LogViewer(Frame):
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    hw_ratio = 1.907801
+    wh_ratio = 1.907801
     width = 1050
-    height = int(width / hw_ratio)
+    height = int(width / wh_ratio)
     root.geometry("{}x{}+200+200".format(width, height))
     root.mainloop()
 
