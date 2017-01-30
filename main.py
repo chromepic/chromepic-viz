@@ -132,10 +132,10 @@ class LogViewer(Frame):
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    wh_ratio = 1.907801
-    width = 1050
+    wh_ratio = 2
+    width = 1200
     height = int(width / wh_ratio)
-    root.geometry("{}x{}+200+200".format(width, height))
+    root.geometry("{}x{}+100+100".format(width, height))
     root.mainloop()
 
 
