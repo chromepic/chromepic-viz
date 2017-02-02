@@ -86,8 +86,14 @@ class LogViewer(Frame):
 
     def init_navigation(self):
         self._job = None
-        w = Scale(self, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL, command=self.on_switch_image)
-        w.grid(row=3, column=0, columnspan=4, padx=20, pady=20, sticky=N + S + E + W)
+        nav_frame = Frame(self)
+        nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+        self.prev = Button(nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index - 1))
+        self.prev.pack(side=LEFT)
+        self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 1))
+        self.next.pack(side=RIGHT)
+        self.w = Scale(nav_frame, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL, command=self.on_switch_image)
+        self.w.pack(expand=True, fill=BOTH)
 
     def on_switch_image(self, index):
         # this logic makes the image switch only if a certain amount of time has elapsed since the last scale change,
@@ -101,6 +107,11 @@ class LogViewer(Frame):
 
     def switch_current_image(self, index):
         self._job = None
+
+        # TODO disable prev/next
+
+        if hasattr(self, 'w'):
+            self.w.set(index)
 
         index = int(index)
         self.current_index = index
