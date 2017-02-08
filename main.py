@@ -92,7 +92,8 @@ class LogViewer(Frame):
         self.prev.pack(side=LEFT)
         self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 1))
         self.next.pack(side=RIGHT)
-        self.w = Scale(nav_frame, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL, command=self.on_switch_image)
+        self.w = Scale(nav_frame, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL,
+                       command=self.on_switch_image)
         self.w.pack(expand=True, fill=BOTH)
 
     def on_switch_image(self, index):
@@ -108,13 +109,21 @@ class LogViewer(Frame):
     def switch_current_image(self, index):
         self._job = None
 
-        # TODO disable prev/next
+        index = int(index)
+        self.current_index = index
+
+        if hasattr(self, 'prev'):
+            self.prev['state'] = 'normal'
+            self.next['state'] = 'normal'
+
+            if index == 1:
+                self.prev['state'] = 'disabled'
+            if index == len(self.all_screenshots):
+                self.next['state'] = 'disabled'
 
         if hasattr(self, 'w'):
             self.w.set(index)
 
-        index = int(index)
-        self.current_index = index
         for i in range(index - 1, index + 2):
             if not (0 <= i <= len(self.all_screenshots) + 1):
                 # out of bounds
