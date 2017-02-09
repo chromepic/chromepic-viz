@@ -30,6 +30,8 @@ class LogViewer(Frame):
         self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/11_8_2016__19_26_14_0x3fabb44008c0'
         self.all_screenshots = logs.get_all_screenshot_names(self.screenshot_dir)
 
+        logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log15/', 'vespa_log15.txt')
+
         # assuming they're named "snapshot_x.png"
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
 
