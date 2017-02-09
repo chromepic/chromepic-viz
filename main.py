@@ -22,19 +22,28 @@ class LogViewer(Frame):
         self.pack(fill=BOTH, expand=True)
         self.grid_columnconfigure(0, weight=1)
 
+        self.load_data()
         self.init_snapshots()
-
         self.init_navigation()
+        self.init_metadata()
 
-    def init_snapshots(self):
-        self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/11_8_2016__19_26_14_0x3fabb44008c0'
+    def load_data(self):
+        tab = '11_8_2016__19_26_14_0x3fabb44008c0'
+        self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/' + tab
         self.all_screenshots = logs.get_all_screenshot_names(self.screenshot_dir)
 
-        logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log15/', 'vespa_log15.txt')
+        metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log15/',
+                                                          'vespa_log15.txt')
+        # metadata just for this tab
+        self.metadata = []
+        for m in metadata_all_tabs:
+            if m[2] == tab:
+                self.metadata.append(m)
 
         # assuming they're named "snapshot_x.png"
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
 
+    def init_snapshots(self):
         self.pil_imgs = {}
         # to keep them from getting deleted by garbage collection
         self.tk_imgs = {}
@@ -94,7 +103,7 @@ class LogViewer(Frame):
         self.prev.pack(side=LEFT)
         self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 1))
         self.next.pack(side=RIGHT)
-        self.w = Scale(nav_frame, from_=1, to=len(self.all_screenshots), orient=HORIZONTAL,
+        self.w = Scale(nav_frame, from_=1, to=len(self.metadata), orient=HORIZONTAL,
                        command=self.on_switch_image)
         self.w.pack(expand=True, fill=BOTH)
 
@@ -120,35 +129,54 @@ class LogViewer(Frame):
 
             if index == 1:
                 self.prev['state'] = 'disabled'
-            if index == len(self.all_screenshots):
+            if index == len(self.metadata):
                 self.next['state'] = 'disabled'
 
         if hasattr(self, 'w'):
             self.w.set(index)
 
         for i in range(index - 1, index + 2):
-            if not (0 <= i <= len(self.all_screenshots) + 1):
+            if not (0 <= i <= len(self.metadata) + 1):
                 # out of bounds
                 continue
 
             # load lazily
             if i not in self.pil_imgs:
                 # img not loaded yet
-                if i == 0 or i == len(self.all_screenshots) + 1:
+                if i == 0 or i == len(self.metadata) + 1 or self.metadata[i - 1][1] not in self.all_screenshots:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.all_screenshots[i - 1]))
+                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i - 1][1]))
 
                 self.pil_imgs[i] = pil_img
                 self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
 
             canvas_i = i - index + 1
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
-            if 0 <= i - 1 < len(self.all_screenshots):
-                self.display_labels[canvas_i]['text'] = self.all_screenshots[i - 1]
+            if 0 <= i - 1 < len(self.metadata):
+                self.display_labels[canvas_i]['text'] = self.metadata[i - 1][1]
+                if hasattr(self, 'last_key_label'):
+                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i - 1][5])
+                    self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i - 1][6])
+                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i - 1][3])
             else:
                 self.display_labels[canvas_i]['text'] = ''
+
+
+
+    def init_metadata(self):
+        metadata_frame = Frame(self)
+        metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+
+        self.last_key_label = Label(metadata_frame, text='last key: X')
+        self.last_key_label.pack()
+
+        self.trigger_label = Label(metadata_frame, text='trigger: mouse click')
+        self.trigger_label.pack()
+
+        self.time_label = Label(metadata_frame, text='time: 12.3s')
+        self.time_label.pack()
 
 
 def main():

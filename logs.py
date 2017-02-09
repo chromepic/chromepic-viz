@@ -46,7 +46,7 @@ def read_screenshot_metadata(log_path, log_filename):
     :param log_path: Path to directory where log and screenshots are in
     :param log_filename: Name of log file relative to log_path
     :return: An array for each snapshot, consisting of:
-    (event id, filename, time, last mouse pos, last key pressed, trigger type)
+    (event id, filename, tab, time, last mouse pos, last key pressed, trigger type)
     """
 
     metadata = []
@@ -81,10 +81,9 @@ def read_screenshot_metadata(log_path, log_filename):
                     initial_time = time
                 time_secs = (time - initial_time) / 10000000
                 event_id = extract_attr(line, event_id_msg)
-                snapshot_filename = os.path.join(log_path, 'screenshots', output_dir,
-                                                 'snapshot_{}.png'.format(snapshot_id))
+                snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
 
-                info = [event_id, snapshot_filename, time_secs, last_mouse_pos, last_keycode]
+                info = [event_id, snapshot_filename, output_dir, time_secs, last_mouse_pos, last_keycode]
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
