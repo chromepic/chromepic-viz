@@ -12,7 +12,13 @@ def get_all_screenshot_names(directory):
     """
 
     # this assumes there are only screenshots in the dir
-    return os.listdir(directory)
+    all_files = os.listdir(directory)
+    screenshots = []
+    for f in all_files:
+        if f.startswith('snapshot') and f.endswith('.png'):
+            screenshots.append(f)
+
+    return screenshots
 
 
 def read_screenshot(path):
