@@ -59,7 +59,7 @@ class LogViewer(Frame):
 
         self.dummy_img = PIL.Image.new('RGBA', (1, 1), "white")
 
-        self.switch_current_image(1)
+        self.switch_current_image(2)
 
         self.resizing_methods = []
         self.resizing_methods.append(lambda event: self.resize(0, event.width))
@@ -103,9 +103,9 @@ class LogViewer(Frame):
         self._job = None
         nav_frame = Frame(self)
         nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
-        self.prev = Button(nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index - 1))
+        self.prev = Button(nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index))
         self.prev.pack(side=LEFT)
-        self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 1))
+        self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 2))
         self.next.pack(side=RIGHT)
         self.w = Scale(nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
                        command=self.on_switch_image)
@@ -124,30 +124,30 @@ class LogViewer(Frame):
     def switch_current_image(self, index):
         self._job = None
 
-        index = int(index)
+        index = int(index) - 1
         self.current_index = index
 
         if hasattr(self, 'prev'):
             self.prev['state'] = 'normal'
             self.next['state'] = 'normal'
 
-            if index == 1:
+            if index == 0:
                 self.prev['state'] = 'disabled'
-            if index == self.n:
+            if index == self.n - 1:
                 self.next['state'] = 'disabled'
 
         if hasattr(self, 'w'):
-            self.w.set(index)
+            self.w.set(index + 1)
 
         for i in range(index - 1, index + 2):
-            if not (0 <= i <= self.n + 1):
+            if not (-1 <= i <= self.n + 1):
                 # out of bounds
                 continue
 
             # load lazily
             if not hasattr(self.metadata[i], 'pil_img') or self.metadata[i]['pil_img'] is None:
                 # img not loaded yet
-                if i == 0 or i >= self.n or self.metadata[i]['fname'] not in self.all_screenshots:
+                if i < 0 or i >= self.n or self.metadata[i]['fname'] not in self.all_screenshots:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
