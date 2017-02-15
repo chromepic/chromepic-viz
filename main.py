@@ -5,7 +5,7 @@ from tkinter import *
 import sys
 
 import PIL
-from PIL import ImageTk
+from PIL import ImageTk, Image
 
 import logs
 
@@ -28,12 +28,12 @@ class LogViewer(Frame):
         self.init_metadata()
 
     def load_data(self):
-        tab = '11_8_2016__19_26_14_0x3fabb44008c0'
-        self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log15/screenshots/' + tab
+        tab = '11_8_2016__18_41_58_0x35bb08c21c40'
+        self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log14/screenshots/' + tab
         self.all_screenshots = logs.get_all_screenshot_names(self.screenshot_dir)
 
-        metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log15/',
-                                                          'vespa_log15.txt')
+        metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log14/',
+                                                          'vespa_log14.txt')
         # metadata just for this tab
         self.metadata = []
         for m in metadata_all_tabs:
@@ -42,6 +42,8 @@ class LogViewer(Frame):
 
         # assuming they're named "snapshot_x.png"
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
+
+        self.marker = Image.open('marker.png')
 
     def init_snapshots(self):
         self.pil_imgs = {}
@@ -147,7 +149,11 @@ class LogViewer(Frame):
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
+                    print('load: ' + self.metadata[i - 1][1])
                     pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i - 1][1]))
+                    pil_img = pil_img.copy()
+                    mouse_x, mouse_y = self.metadata[i - 1][4][0], self.metadata[i - 1][4][1]
+                    pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
 
                 self.pil_imgs[i] = pil_img
                 self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
@@ -160,29 +166,32 @@ class LogViewer(Frame):
                     self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i - 1][5])
                     self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i - 1][6])
                     self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i - 1][3])
+                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(self.metadata[i - 1][4][0],
+                                                                                          self.metadata[i - 1][4][1])
             else:
                 self.display_labels[canvas_i]['text'] = ''
-
-
 
     def init_metadata(self):
         metadata_frame = Frame(self)
         metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
 
-        self.last_key_label = Label(metadata_frame, text='last key: X')
+        self.last_key_label = Label(metadata_frame, text='')
         self.last_key_label.pack()
 
-        self.trigger_label = Label(metadata_frame, text='trigger: mouse click')
+        self.trigger_label = Label(metadata_frame, text='')
         self.trigger_label.pack()
 
-        self.time_label = Label(metadata_frame, text='time: 12.3s')
+        self.time_label = Label(metadata_frame, text='')
         self.time_label.pack()
+
+        self.last_mouse_pos_label = Label(metadata_frame, text='')
+        self.last_mouse_pos_label.pack()
 
 
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    wh_ratio = 2
+    wh_ratio = 1.9
     width = 1200
     height = int(width / wh_ratio)
     root.geometry("{}x{}+100+100".format(width, height))
