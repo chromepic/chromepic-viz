@@ -5,6 +5,7 @@ from tkinter import *
 import sys
 
 import PIL
+import collections
 from PIL import ImageTk, Image
 
 import logs
@@ -35,10 +36,14 @@ class LogViewer(Frame):
         metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log14/',
                                                           'vespa_log14.txt')
         # metadata just for this tab
-        self.metadata = []
+        self.metadata = collections.defaultdict(dict)
         for m in metadata_all_tabs:
             if m['tab'] == tab:
-                self.metadata.append(m)
+                m['tk_img'] = None
+                m['pil_img'] = None
+                self.metadata[len(self.metadata)] = m
+        # len of metadata might change because of dummy images
+        self.n = len(self.metadata)
 
         # assuming they're named "snapshot_x.png"
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
@@ -46,10 +51,6 @@ class LogViewer(Frame):
         self.marker = Image.open('marker.png')
 
     def init_snapshots(self):
-        self.pil_imgs = {}
-        # to keep them from getting deleted by garbage collection
-        self.tk_imgs = {}
-
         # for displaying the snapshots
         self.display_frames = [Frame(self) for _ in range(3)]
         self.displays = [Canvas(self.display_frames[i], bd=0, highlightthickness=0) for i in range(3)]
@@ -87,10 +88,11 @@ class LogViewer(Frame):
 
     def resize(self, canvas_i, width):
         img_i = canvas_i + self.current_index - 1
-        if self.tk_imgs[img_i].width() != width:  # it may already have been converted to correct size
-            self.tk_imgs[img_i] = ImageTk.PhotoImage(self.resize_keep_aspect(width, self.pil_imgs[img_i]))
+        if self.metadata[img_i]['tk_img'].width() != width:  # it may already have been converted to correct size
+            self.metadata[img_i]['tk_img'] = ImageTk.PhotoImage(
+                self.resize_keep_aspect(width, self.metadata[img_i]['pil_img']))
         self.displays[canvas_i].delete("IMG")
-        self.displays[canvas_i].create_image(0, 0, image=self.tk_imgs[img_i], anchor=NW, tags="IMG")
+        self.displays[canvas_i].create_image(0, 0, image=self.metadata[img_i]['tk_img'], anchor=NW, tags="IMG")
 
     def resize_keep_aspect(self, new_width, img):
         wpercent = (new_width / float(img.size[0]))
@@ -105,7 +107,7 @@ class LogViewer(Frame):
         self.prev.pack(side=LEFT)
         self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 1))
         self.next.pack(side=RIGHT)
-        self.w = Scale(nav_frame, from_=1, to=len(self.metadata), orient=HORIZONTAL,
+        self.w = Scale(nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
                        command=self.on_switch_image)
         self.w.pack(expand=True, fill=BOTH)
 
@@ -131,43 +133,44 @@ class LogViewer(Frame):
 
             if index == 1:
                 self.prev['state'] = 'disabled'
-            if index == len(self.metadata):
+            if index == self.n:
                 self.next['state'] = 'disabled'
 
         if hasattr(self, 'w'):
             self.w.set(index)
 
         for i in range(index - 1, index + 2):
-            if not (0 <= i <= len(self.metadata) + 1):
+            if not (0 <= i <= self.n + 1):
                 # out of bounds
                 continue
 
             # load lazily
-            if i not in self.pil_imgs:
+            if not hasattr(self.metadata[i], 'pil_img') or self.metadata[i]['pil_img'] is None:
                 # img not loaded yet
-                if i == 0 or i == len(self.metadata) + 1 or self.metadata[i - 1]['fname'] not in self.all_screenshots:
+                if i == 0 or i >= self.n or self.metadata[i]['fname'] not in self.all_screenshots:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    print('load: ' + self.metadata[i - 1]['fname'])
-                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i - 1]['fname']))
+                    print('load: ' + self.metadata[i]['fname'])
+                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
                     pil_img = pil_img.copy()
-                    mouse_x, mouse_y = self.metadata[i - 1]['mouse'][0], self.metadata[i - 1]['mouse'][1]
+                    mouse_x, mouse_y = self.metadata[i]['mouse'][0], self.metadata[i]['mouse'][1]
                     pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
 
-                self.pil_imgs[i] = pil_img
-                self.tk_imgs[i] = ImageTk.PhotoImage(pil_img)
+                self.metadata[i]['pil_img'] = pil_img
+                self.metadata[i]['tk_img'] = ImageTk.PhotoImage(pil_img)
 
             canvas_i = i - index + 1
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
-            if 0 <= i - 1 < len(self.metadata):
-                self.display_labels[canvas_i]['text'] = self.metadata[i - 1]['fname']
-                if hasattr(self, 'last_key_label'):
-                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i - 1]['key'])
-                    self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i - 1]['trigger'])
-                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i - 1]['t'])
-                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(self.metadata[i - 1]['mouse'][0],
-                                                                                          self.metadata[i - 1]['mouse'][1])
+            if 0 <= i < self.n:
+                self.display_labels[canvas_i]['text'] = self.metadata[i]['fname']
+                if i == index and hasattr(self, 'last_key_label'):
+                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i]['key'])
+                    self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i]['trigger'])
+                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i]['t'])
+                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(
+                        self.metadata[i]['mouse'][0],
+                        self.metadata[i]['mouse'][1])
             else:
                 self.display_labels[canvas_i]['text'] = ''
 
