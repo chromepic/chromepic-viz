@@ -51,7 +51,7 @@ def read_screenshot_metadata(log_path, log_filename):
 
     :param log_path: Path to directory where log and screenshots are in
     :param log_filename: Name of log file relative to log_path
-    :return: An array for each snapshot, consisting of:
+    :return: An dict for each snapshot, consisting of:
     (event id, filename, tab, time, last mouse pos, last key pressed, trigger type)
     """
 
@@ -89,12 +89,13 @@ def read_screenshot_metadata(log_path, log_filename):
                 event_id = extract_attr(line, event_id_msg)
                 snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
 
-                info = [event_id, snapshot_filename, output_dir, time_secs, last_mouse_pos, last_keycode]
+                info = {'id': event_id, 'fname': snapshot_filename, 'tab': output_dir, 't': time_secs,
+                        'mouse': last_mouse_pos, 'key': last_keycode}
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
                     # append trigger type
-                    info.append(last_trigger[1])
+                    info['trigger'] = (last_trigger[1])
                     metadata.append(info)
                     last_snapshot_event = None
                     last_trigger = None
@@ -117,9 +118,9 @@ def read_screenshot_metadata(log_path, log_filename):
                     last_keycode = int(keycode)
 
                 # snapshot could come before trigger
-                if last_snapshot_event is not None and last_snapshot_event[0] == event_id:
+                if last_snapshot_event is not None and last_snapshot_event['id'] == event_id:
                     # append trigger type
-                    last_snapshot_event.append(type)
+                    last_snapshot_event['trigger'] = (type)
                     metadata.append(last_snapshot_event)
                     last_snapshot_event = None
                     last_trigger = None

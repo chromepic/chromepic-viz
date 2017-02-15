@@ -37,7 +37,7 @@ class LogViewer(Frame):
         # metadata just for this tab
         self.metadata = []
         for m in metadata_all_tabs:
-            if m[2] == tab:
+            if m['tab'] == tab:
                 self.metadata.append(m)
 
         # assuming they're named "snapshot_x.png"
@@ -145,14 +145,14 @@ class LogViewer(Frame):
             # load lazily
             if i not in self.pil_imgs:
                 # img not loaded yet
-                if i == 0 or i == len(self.metadata) + 1 or self.metadata[i - 1][1] not in self.all_screenshots:
+                if i == 0 or i == len(self.metadata) + 1 or self.metadata[i - 1]['fname'] not in self.all_screenshots:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    print('load: ' + self.metadata[i - 1][1])
-                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i - 1][1]))
+                    print('load: ' + self.metadata[i - 1]['fname'])
+                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i - 1]['fname']))
                     pil_img = pil_img.copy()
-                    mouse_x, mouse_y = self.metadata[i - 1][4][0], self.metadata[i - 1][4][1]
+                    mouse_x, mouse_y = self.metadata[i - 1]['mouse'][0], self.metadata[i - 1]['mouse'][1]
                     pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
 
                 self.pil_imgs[i] = pil_img
@@ -161,13 +161,13 @@ class LogViewer(Frame):
             canvas_i = i - index + 1
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
             if 0 <= i - 1 < len(self.metadata):
-                self.display_labels[canvas_i]['text'] = self.metadata[i - 1][1]
+                self.display_labels[canvas_i]['text'] = self.metadata[i - 1]['fname']
                 if hasattr(self, 'last_key_label'):
-                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i - 1][5])
-                    self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i - 1][6])
-                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i - 1][3])
-                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(self.metadata[i - 1][4][0],
-                                                                                          self.metadata[i - 1][4][1])
+                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i - 1]['key'])
+                    self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i - 1]['trigger'])
+                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i - 1]['t'])
+                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(self.metadata[i - 1]['mouse'][0],
+                                                                                          self.metadata[i - 1]['mouse'][1])
             else:
                 self.display_labels[canvas_i]['text'] = ''
 
