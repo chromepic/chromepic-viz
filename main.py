@@ -163,13 +163,15 @@ class LogViewer(Frame):
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
             if 0 <= i < self.n:
                 self.display_labels[canvas_i]['text'] = self.metadata[i]['fname']
-                if i == index and hasattr(self, 'last_key_label'):
-                    self.last_key_label['text'] = 'Last key pressed: ' + str(self.metadata[i]['key'])
+                if i == index and hasattr(self, 'event_detail'):
+                    if self.metadata[i]['trigger'].lower() == 'key':
+                        self.event_detail['text'] = 'Last key pressed: ' + str(self.metadata[i]['key'])
+                    else:
+                        self.event_detail['text'] = 'Last mouse pos: ({}, {})'.format(
+                            self.metadata[i]['mouse'][0],
+                            self.metadata[i]['mouse'][1])
                     self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i]['trigger'])
                     self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i]['t'])
-                    self.last_mouse_pos_label['text'] = 'Last mouse pos: ({}, {})'.format(
-                        self.metadata[i]['mouse'][0],
-                        self.metadata[i]['mouse'][1])
             else:
                 self.display_labels[canvas_i]['text'] = ''
 
@@ -177,17 +179,14 @@ class LogViewer(Frame):
         metadata_frame = Frame(self)
         metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
 
-        self.last_key_label = Label(metadata_frame, text='')
-        self.last_key_label.pack()
-
         self.trigger_label = Label(metadata_frame, text='')
         self.trigger_label.pack()
 
+        self.event_detail = Label(metadata_frame, text='')
+        self.event_detail.pack()
+
         self.time_label = Label(metadata_frame, text='')
         self.time_label.pack()
-
-        self.last_mouse_pos_label = Label(metadata_frame, text='')
-        self.last_mouse_pos_label.pack()
 
 
 def main():
