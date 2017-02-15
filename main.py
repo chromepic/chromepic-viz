@@ -151,7 +151,6 @@ class LogViewer(Frame):
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    print('load: ' + self.metadata[i]['fname'])
                     pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
                     pil_img = pil_img.copy()
                     mouse_x, mouse_y = self.metadata[i]['mouse'][0], self.metadata[i]['mouse'][1]

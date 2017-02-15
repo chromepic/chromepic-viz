@@ -1,5 +1,6 @@
 import os
 import tkinter
+import keycodes
 
 from PIL import Image
 
@@ -89,8 +90,11 @@ def read_screenshot_metadata(log_path, log_filename):
                 event_id = extract_attr(line, event_id_msg)
                 snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
 
+                # lookup name corresponding to the keycode
+                key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'
+
                 info = {'id': event_id, 'fname': snapshot_filename, 'tab': output_dir, 't': time_secs,
-                        'mouse': last_mouse_pos, 'key': last_keycode}
+                        'mouse': last_mouse_pos, 'key': key_name}
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
