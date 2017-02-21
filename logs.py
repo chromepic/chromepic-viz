@@ -79,6 +79,11 @@ def read_screenshot_metadata(log_path, log_filename):
         last_trigger = None
         last_snapshot_event = None
 
+        # Parse logs as follows: iterate through lines. We don't know if the line with the trigger comes first, or the line with
+        # the snapshot info. So if we come accross a trigger line, set the trigger info for the last snapshot info if the event ids
+        # match. Conversely, if we come accross a snapshot info line, set the snapshot info for the last trigger info if the
+        # event ids match.
+
         for line in lines:
             if line.find(snapshot_msg) != -1:
                 snapshot_id = extract_attr(line, snapshot_id_msg)
@@ -120,11 +125,17 @@ def read_screenshot_metadata(log_path, log_filename):
                 elif type == 'Key':
                     keycode = extract_attr(line, keycode_msg)
                     last_keycode = int(keycode)
+                    # lookup name corresponding to the keycode
+                    key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'
 
                 # snapshot could come before trigger
                 if last_snapshot_event is not None and last_snapshot_event['id'] == event_id:
                     # append trigger type
-                    last_snapshot_event['trigger'] = (type)
+                    last_snapshot_event['trigger'] = type
+                    if type == 'MouseMove':
+                        last_snapshot_event['mouse'] = last_mouse_pos
+                    elif type == 'Key':
+                        last_snapshot_event['key'] = key_name
                     metadata.append(last_snapshot_event)
                     last_snapshot_event = None
                     last_trigger = None
