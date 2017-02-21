@@ -152,9 +152,11 @@ class LogViewer(Frame):
                     pil_img = self.dummy_img
                 else:
                     pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
-                    pil_img = pil_img.copy()
-                    mouse_x, mouse_y = self.metadata[i]['mouse'][0], self.metadata[i]['mouse'][1]
-                    pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
+                    # only show mouse marker on events triggered by mouse
+                    if self.metadata[i]['trigger'] == 'MouseMove' or self.metadata[i]['trigger'] == 'Click':
+                        pil_img = pil_img.copy()
+                        mouse_x, mouse_y = self.metadata[i]['mouse'][0], self.metadata[i]['mouse'][1]
+                        pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
 
                 self.metadata[i]['pil_img'] = pil_img
                 self.metadata[i]['tk_img'] = ImageTk.PhotoImage(pil_img)
