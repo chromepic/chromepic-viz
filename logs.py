@@ -5,6 +5,8 @@ import keycodes
 
 from PIL import Image
 
+import triggers
+
 
 def get_all_screenshot_names(directory):
     """
@@ -135,10 +137,10 @@ def read_screenshot_metadata(log_path, log_filename):
                 time_secs = (time - initial_time) / 10000000
                 type = line[len(trigger_msg):line.find(' ', len(trigger_msg))]
 
-                if type == 'MouseMove':
+                if type in triggers.mouse_position_triggers:
                     coordinates = extract_attr(line, coordinates_msg)
                     last_mouse_pos = (int(coordinates[0]), int(coordinates[1]))
-                elif type == 'Key':
+                elif type in triggers.keycode_triggers:
                     keycode = extract_attr(line, keycode_msg)
                     last_keycode = int(keycode)
                     # lookup name corresponding to the keycode
@@ -148,9 +150,9 @@ def read_screenshot_metadata(log_path, log_filename):
                 if last_snapshot_event is not None and last_snapshot_event['id'] == event_id:
                     # append trigger type
                     last_snapshot_event['trigger'] = type
-                    if type == 'MouseMove':
+                    if type in triggers.mouse_position_triggers:
                         last_snapshot_event['mouse'] = last_mouse_pos
-                    elif type == 'Key':
+                    elif type in triggers.keycode_triggers:
                         last_snapshot_event['key'] = key_name
                     metadata.append(last_snapshot_event)
                     last_snapshot_event = None

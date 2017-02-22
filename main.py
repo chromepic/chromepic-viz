@@ -9,6 +9,7 @@ import collections
 from PIL import ImageTk, Image
 
 import logs
+import triggers
 
 
 class LogViewer(Frame):
@@ -153,7 +154,7 @@ class LogViewer(Frame):
                 else:
                     pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
                     # only show mouse marker on events triggered by mouse
-                    if self.metadata[i]['trigger'] == 'MouseMove' or self.metadata[i]['trigger'] == 'Click':
+                    if self.metadata[i]['trigger'] in triggers.mouse_position_triggers:
                         pil_img = pil_img.copy()
                         mouse_x, mouse_y = self.metadata[i]['mouse'][0], self.metadata[i]['mouse'][1]
                         pil_img.paste(self.marker.copy(), (mouse_x, mouse_y))
@@ -166,9 +167,9 @@ class LogViewer(Frame):
             if 0 <= i < self.n:
                 self.display_labels[canvas_i]['text'] = self.metadata[i]['fname']
                 if i == index and hasattr(self, 'event_detail'):
-                    if self.metadata[i]['trigger'].lower() == 'key':
+                    if self.metadata[i]['trigger'] in triggers.keycode_triggers:
                         self.event_detail['text'] = 'Last key pressed: ' + str(self.metadata[i]['key'])
-                    else:
+                    elif self.metadata[i]['trigger'] in triggers.mouse_position_triggers:
                         self.event_detail['text'] = 'Last mouse pos: ({}, {})'.format(
                             self.metadata[i]['mouse'][0],
                             self.metadata[i]['mouse'][1])
