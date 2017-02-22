@@ -173,7 +173,11 @@ class LogViewer(Frame):
                             self.metadata[i]['mouse'][0],
                             self.metadata[i]['mouse'][1])
                     self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i]['trigger'])
-                    self.time_label['text'] = 'Time: {0:.1f} seconds'.format(self.metadata[i]['t'])
+                    if self.metadata[i]['abstime'] is None:
+                        self.time_label['text'] = 'Time: Error'
+                    else:
+                        date_str = self.metadata[i]['abstime'].strftime('%m/%d/%Y %H:%M:%S')
+                        self.time_label['text'] = 'Time: ' + date_str
             else:
                 self.display_labels[canvas_i]['text'] = ''
 

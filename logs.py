@@ -1,3 +1,4 @@
+import datetime
 import os
 import tkinter
 import keycodes
@@ -53,7 +54,7 @@ def read_screenshot_metadata(log_path, log_filename):
     :param log_path: Path to directory where log and screenshots are in
     :param log_filename: Name of log file relative to log_path
     :return: An dict for each snapshot, consisting of:
-    (event id, filename, tab, time, last mouse pos, last key pressed, trigger type)
+    (event id, filename, tab, time, absolute time, last mouse pos, last key pressed, trigger type)
     """
 
     metadata = []
@@ -79,6 +80,19 @@ def read_screenshot_metadata(log_path, log_filename):
         last_trigger = None
         last_snapshot_event = None
 
+        # first line should contain date with timestamp
+        start_date = None
+
+        if len(lines) > 0:
+            dir_name = extract_attr(lines[0], 'SnapshotHandler:: Directory generated: ')
+            date_str = dir_name[:dir_name.rfind('_')]
+            try:
+                start_date = datetime.datetime.strptime(date_str, '%m_%d_%Y__%H_%M_%S')
+                initial_time = int(extract_attr(lines[0], time_msg))
+            except ValueError:
+                start_date = None
+                pass
+
         # Parse logs as follows: iterate through lines. We don't know if the line with the trigger comes first, or the line with
         # the snapshot info. So if we come accross a trigger line, set the trigger info for the last snapshot info if the event ids
         # match. Conversely, if we come accross a snapshot info line, set the snapshot info for the last trigger info if the
@@ -89,9 +103,11 @@ def read_screenshot_metadata(log_path, log_filename):
                 snapshot_id = extract_attr(line, snapshot_id_msg)
                 output_dir = extract_attr(line, output_dir_msg)
                 time = int(extract_attr(line, time_msg))
-                if initial_time is None:
-                    initial_time = time
-                time_secs = (time - initial_time) / 10000000
+                time_secs, absolute_time = 0, None
+                if initial_time is not None:
+                    time_secs = (time - initial_time) / 10000000
+                if start_date is not None:
+                    absolute_time = start_date + datetime.timedelta(seconds=time_secs)
                 event_id = extract_attr(line, event_id_msg)
                 snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
 
@@ -99,7 +115,7 @@ def read_screenshot_metadata(log_path, log_filename):
                 key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'
 
                 info = {'id': event_id, 'fname': snapshot_filename, 'tab': output_dir, 't': time_secs,
-                        'mouse': last_mouse_pos, 'key': key_name}
+                        'abstime': absolute_time, 'mouse': last_mouse_pos, 'key': key_name}
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
