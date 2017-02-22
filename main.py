@@ -9,6 +9,7 @@ import collections
 from PIL import ImageTk, Image
 
 import logs
+import screenshots
 import triggers
 
 
@@ -32,7 +33,7 @@ class LogViewer(Frame):
     def load_data(self):
         tab = '11_8_2016__18_41_58_0x35bb08c21c40'
         self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log14/screenshots/' + tab
-        self.all_screenshots = logs.get_all_screenshot_names(self.screenshot_dir)
+        self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
 
         metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log14/',
                                                           'vespa_log14.txt')
@@ -152,7 +153,7 @@ class LogViewer(Frame):
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    pil_img = logs.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
+                    pil_img = screenshots.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
                     # only show mouse marker on events triggered by mouse
                     if self.metadata[i]['trigger'] in triggers.mouse_position_triggers:
                         pil_img = pil_img.copy()
