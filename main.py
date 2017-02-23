@@ -8,6 +8,7 @@ import PIL
 import collections
 from PIL import ImageTk, Image
 
+import doms
 import logs
 import screenshots
 import triggers
@@ -31,16 +32,18 @@ class LogViewer(Frame):
         self.init_metadata()
 
     def load_data(self):
-        tab = '11_8_2016__18_41_58_0x35bb08c21c40'
-        self.screenshot_dir = '/Users/Valentin/OneDrive/School/Directed Study/vespa_log14/screenshots/' + tab
+        self.base_dir = '/Users/valentin/OneDrive/School/Directed Study/vespa_log14/'
+        self.tab = '11_8_2016__18_41_58_0x35bb08c21c40'
+        self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
         self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
+        self.dom_dir = os.path.join(self.base_dir, 'dom_snapshots', self.tab)
 
-        metadata_all_tabs = logs.read_screenshot_metadata('/Users/valentin/OneDrive/School/Directed Study/vespa_log14/',
+        metadata_all_tabs = logs.read_screenshot_metadata(self.base_dir,
                                                           'vespa_log14.txt')
         # metadata just for this tab
         self.metadata = collections.defaultdict(dict)
         for m in metadata_all_tabs:
-            if m['tab'] == tab:
+            if m['tab'] == self.tab:
                 m['tk_img'] = None
                 m['pil_img'] = None
                 self.metadata[len(self.metadata)] = m
@@ -195,6 +198,18 @@ class LogViewer(Frame):
 
         self.time_label = Label(metadata_frame, text='')
         self.time_label.pack()
+
+        self.dom_button = Button(metadata_frame, text='DOM', command=self.show_dom)
+        self.dom_button.pack()
+
+    def show_dom(self):
+        fname = self.metadata[self.current_index]['dom']
+        path = os.path.join(self.dom_dir, fname)
+
+        dom = doms.read_dom(path)
+
+        print(len(dom))
+
 
 
 def main():

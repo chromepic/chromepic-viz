@@ -88,12 +88,13 @@ def read_screenshot_metadata(log_path, log_filename):
                     absolute_time = start_date + datetime.timedelta(seconds=time_secs)
                 event_id = extract_attr(line, event_id_msg)
                 snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
+                dom_filename = 'snapshot_{}.mhtml'.format(snapshot_id)
 
                 # lookup name corresponding to the keycode
                 key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'
 
-                info = {'id': event_id, 'fname': snapshot_filename, 'tab': output_dir, 't': time_secs,
-                        'abstime': absolute_time, 'mouse': last_mouse_pos, 'key': key_name}
+                info = {'id': event_id, 'fname': snapshot_filename, 'dom': dom_filename, 'tab': output_dir,
+                        't': time_secs, 'abstime': absolute_time, 'mouse': last_mouse_pos, 'key': key_name}
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
