@@ -1,12 +1,15 @@
 import os
 import subprocess
 import tkinter
+from tempfile import mkdtemp
 from tkinter import *
 
 import sys
 
 import PIL
 import collections
+
+import shutil
 from PIL import ImageTk, Image
 
 import doms
@@ -23,6 +26,11 @@ class LogViewer(Frame):
 
         self.parent = parent
         self.init_ui()
+
+    def cleanup(self):
+        print('Cleaning up...')
+        shutil.rmtree(self.tmp_dir)
+        self.parent.destroy()
 
     def init_ui(self):
         self.parent.title("ChromePic Viewer")
@@ -57,6 +65,8 @@ class LogViewer(Frame):
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
 
         self.marker = Image.open('marker.png')
+
+        self.tmp_dir = mkdtemp()
 
     def init_snapshots(self):
         # for displaying the snapshots
@@ -210,7 +220,7 @@ class LogViewer(Frame):
         path = os.path.join(self.dom_dir, fname)
         dom = doms.read_dom(path)
         # write to temporary file
-        temp_path = doms.write_to_temp(dom, fname, self.base_dir)
+        temp_path = doms.write_to_temp(dom, fname, self.tmp_dir)
 
         if _platform == 'linux' or _platform == 'linux2':
             # linux
@@ -230,6 +240,7 @@ def main():
     width = 1200
     height = int(width / wh_ratio)
     root.geometry("{}x{}+100+100".format(width, height))
+    root.protocol("WM_DELETE_WINDOW", app.cleanup)
     root.mainloop()
 
 
