@@ -1,4 +1,6 @@
 import codecs
+import os
+import random
 
 import logs
 
@@ -38,3 +40,11 @@ def read_dom(path):
             entity_start = all.find(multipart_boundary_msg, entity_end + 1)
 
         return text_only
+
+
+def write_to_temp(dom, fname, base_dir):
+    # generate random filename
+    path = os.path.join(base_dir, fname + '_' + str(random.randint(100000, 1000000000)) + '.txt')
+    with open(path, 'w') as f:
+        f.write(dom)
+    return path

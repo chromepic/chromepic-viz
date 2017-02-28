@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tkinter
 from tkinter import *
 
@@ -12,6 +13,8 @@ import doms
 import logs
 import screenshots
 import triggers
+from dom_viewer import DomViewer
+from sys import platform as _platform
 
 
 class LogViewer(Frame):
@@ -205,11 +208,19 @@ class LogViewer(Frame):
     def show_dom(self):
         fname = self.metadata[self.current_index]['dom']
         path = os.path.join(self.dom_dir, fname)
-
         dom = doms.read_dom(path)
+        # write to temporary file
+        temp_path = doms.write_to_temp(dom, fname, self.base_dir)
 
-        print(len(dom))
-
+        if _platform == 'linux' or _platform == 'linux2':
+            # linux
+            subprocess.call(['xdg-open', temp_path])
+        elif _platform == 'darwin':
+            # MAC OS X
+            subprocess.call(['open', temp_path])
+        elif _platform == 'win32':
+            # Windows
+            subprocess.call([temp_path])
 
 
 def main():
