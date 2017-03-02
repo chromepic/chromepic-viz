@@ -212,8 +212,11 @@ class LogViewer(Frame):
         self.time_label = Label(metadata_frame, text='')
         self.time_label.pack()
 
-        self.dom_button = Button(metadata_frame, text='DOM text', command=self.show_dom)
+        self.dom_button = Button(metadata_frame, text='Show DOM text', command=self.show_dom)
         self.dom_button.pack()
+
+        self.dom_explorer_button = Button(metadata_frame, text='Show DOM in explorer ', command=self.show_dom_explorer)
+        self.dom_explorer_button.pack()
 
     def show_dom(self):
         path = os.path.join(self.dom_dir, self.metadata[self.current_index]['dom'])
@@ -232,11 +235,24 @@ class LogViewer(Frame):
             # Windows
             subprocess.call([temp_path])
 
+    def show_dom_explorer(self):
+        path = self.dom_dir
+
+        if _platform == 'linux' or _platform == 'linux2':
+            # linux
+            subprocess.call(['xdg-open', path])
+        elif _platform == 'darwin':
+            # MAC OS X
+            subprocess.call(['open', '--', path])
+        elif _platform == 'win32':
+            # Windows
+            os.startfile(path)
+
 
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    wh_ratio = 1.9
+    wh_ratio = 1.8
     width = 1200
     height = int(width / wh_ratio)
     root.geometry("{}x{}+100+100".format(width, height))
