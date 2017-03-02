@@ -212,14 +212,14 @@ class LogViewer(Frame):
         self.time_label = Label(metadata_frame, text='')
         self.time_label.pack()
 
-        self.dom_button = Button(metadata_frame, text='DOM', command=self.show_dom)
+        self.dom_button = Button(metadata_frame, text='DOM text', command=self.show_dom)
         self.dom_button.pack()
 
     def show_dom(self):
-        fname = self.metadata[self.current_index]['dom']
-        path = os.path.join(self.dom_dir, fname)
+        path = os.path.join(self.dom_dir, self.metadata[self.current_index]['dom'])
         dom = doms.read_dom(path)
         # write to temporary file
+        fname = '(text only) ' + self.tab + ': ' + self.metadata[self.current_index]['dom'][:-5] + 'txt'
         temp_path = doms.write_to_temp(dom, fname, self.tmp_dir)
 
         if _platform == 'linux' or _platform == 'linux2':

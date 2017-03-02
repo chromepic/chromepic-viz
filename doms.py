@@ -44,7 +44,7 @@ def read_dom(path):
 
 def write_to_temp(dom, fname, base_dir):
     # generate random filename
-    path = os.path.join(base_dir, fname + '_' + str(random.randint(100000, 1000000000)) + '.txt')
+    path = os.path.join(base_dir, fname)
     with open(path, 'w') as f:
         f.write(dom)
     return path
