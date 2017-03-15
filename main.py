@@ -43,7 +43,7 @@ class LogViewer(Frame):
         self.init_metadata()
 
     def load_data(self):
-        self.base_dir = '/Users/valentin/OneDrive/School/Directed Study/vespa_log14/'
+        self.base_dir = '/media/sf_shared_folder/ChromePicLogs/vespa_log14/'
         self.tab = '11_8_2016__18_41_58_0x35bb08c21c40'
         self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
         self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
@@ -236,23 +236,24 @@ class LogViewer(Frame):
             subprocess.call([temp_path])
 
     def show_dom_explorer(self):
-        path = self.dom_dir
+        folder_path = self.dom_dir
+        file_path = os.path.join(self.dom_dir, self.metadata[self.current_index]['dom'])
 
         if _platform == 'linux' or _platform == 'linux2':
-            # linux
-            subprocess.call(['xdg-open', path])
+            # linux: select file in file browser
+            subprocess.call(['nautilus', file_path])
         elif _platform == 'darwin':
             # MAC OS X
-            subprocess.call(['open', '--', path])
+            subprocess.call(['open', '--', folder_path])
         elif _platform == 'win32':
             # Windows
-            os.startfile(path)
+            os.startfile(folder_path)
 
 
 def main():
     root = tkinter.Tk()
     app = LogViewer(root)
-    wh_ratio = 1.8
+    wh_ratio = 1.5
     width = 1200
     height = int(width / wh_ratio)
     root.geometry("{}x{}+100+100".format(width, height))
