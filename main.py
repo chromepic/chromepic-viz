@@ -43,7 +43,7 @@ class LogViewer(Frame):
         self.init_metadata()
 
     def load_data(self):
-        self.base_dir = '/media/sf_shared_folder/ChromePicLogs/vespa_log14/'
+        self.base_dir = 'ChromePicLogs/vespa_log14/'
         self.tab = '11_8_2016__18_41_58_0x35bb08c21c40'
         self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
         self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
@@ -201,6 +201,7 @@ class LogViewer(Frame):
 
     def init_metadata(self):
         metadata_frame = Frame(self)
+
         metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
 
         self.trigger_label = Label(metadata_frame, text='')
@@ -252,6 +253,7 @@ class LogViewer(Frame):
 
 def main():
     root = tkinter.Tk()
+    root.tk_setPalette(background='white')
     app = LogViewer(root)
     wh_ratio = 1.5
     width = 1200
