@@ -16,6 +16,7 @@ import doms
 import logs
 import screenshots
 import triggers
+import util
 from dom_viewer import DomViewer
 from sys import platform as _platform
 
@@ -38,31 +39,23 @@ class LogViewer(Frame):
         self.grid_columnconfigure(0, weight=1)
 
         self.load_data()
+        self.init_menu_bar()
+        self.switch_to_tab('11_8_2016__18_41_58_0x35bb08c21c40')
         self.init_snapshots()
         self.init_navigation()
         self.init_metadata()
 
+    def get_all_tabs(self):
+        all_tabs = set(util.immediate_subdirs(os.path.join(self.base_dir, 'screenshots')))
+        #all_tabs |= set(util.immediate_subdirs(os.path.join(self.base_dir, 'dom_snapshots')))
+        return sorted(list(all_tabs))
+
     def load_data(self):
         self.base_dir = 'ChromePicLogs/vespa_log14/'
-        self.tab = '11_8_2016__18_41_58_0x35bb08c21c40'
-        self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
-        self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
-        self.dom_dir = os.path.join(self.base_dir, 'dom_snapshots', self.tab)
+        self.all_tabs = self.get_all_tabs()
 
-        metadata_all_tabs = logs.read_screenshot_metadata(self.base_dir,
-                                                          'vespa_log14.txt')
-        # metadata just for this tab
-        self.metadata = collections.defaultdict(dict)
-        for m in metadata_all_tabs:
-            if m['tab'] == self.tab:
-                m['tk_img'] = None
-                m['pil_img'] = None
-                self.metadata[len(self.metadata)] = m
-        # len of metadata might change because of dummy images
-        self.n = len(self.metadata)
-
-        # assuming they're named "snapshot_x.png"
-        self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
+        self.metadata_all_tabs = logs.read_screenshot_metadata(self.base_dir,
+                                                               'vespa_log14.txt')
 
         self.marker = Image.open('marker.png')
 
@@ -119,13 +112,13 @@ class LogViewer(Frame):
 
     def init_navigation(self):
         self._job = None
-        nav_frame = Frame(self)
-        nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
-        self.prev = Button(nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index))
+        self.nav_frame = Frame(self)
+        self.nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+        self.prev = Button(self.nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index))
         self.prev.pack(side=LEFT)
-        self.next = Button(nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 2))
+        self.next = Button(self.nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 2))
         self.next.pack(side=RIGHT)
-        self.w = Scale(nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
+        self.w = Scale(self.nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
                        command=self.on_switch_image)
         self.w.pack(expand=True, fill=BOTH)
 
@@ -249,6 +242,46 @@ class LogViewer(Frame):
         elif _platform == 'win32':
             # Windows
             os.startfile(folder_path)
+
+    def init_menu_bar(self):
+        self.menubar = Menu(self)
+
+        self.tab_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Tab", menu=self.tab_menu)
+        self.vlevel = IntVar()
+        for i, tab in enumerate(self.all_tabs):
+            t = tab
+            self.tab_menu.add_radiobutton(label=tab, var=self.vlevel, value=i,
+                                          command=lambda : self.switch_to_tab(self.all_tabs[self.vlevel.get()]))
+
+        try:
+            self.master.config(menu=self.menubar)
+        except AttributeError:
+            # master is a toplevel window (Python 1.4/Tkinter 1.63)
+            self.master.tk.call(self.parent, "config", "-menu", self.menubar)
+
+    def switch_to_tab(self, tab_name):
+        print('Switching to tab ' + tab_name)
+        self.tab = tab_name
+        self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
+        self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
+        # assuming they're named "snapshot_x.png"
+        self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
+        self.dom_dir = os.path.join(self.base_dir, 'dom_snapshots', self.tab)
+
+        # metadata just for this tab
+        self.metadata = collections.defaultdict(dict)
+        for m in self.metadata_all_tabs:
+            if m['tab'] == self.tab:
+                m['tk_img'] = None
+                m['pil_img'] = None
+                self.metadata[len(self.metadata)] = m
+        # len of metadata might change because of dummy images
+        self.n = len(self.metadata)
+
+        if hasattr(self, 'w'):
+            self.w.config(to=self.n)
+            self.switch_current_image(1)
 
 
 def main():
