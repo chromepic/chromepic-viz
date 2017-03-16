@@ -1,4 +1,11 @@
 # Dependencies
 
 - PIL (python imaging library)
-- tkinter (already included in python standard library)
+- tkinter
+
+Under Ubuntu, these can be installed as follows:
+
+sudo apt-get install python3-tk
+sudo apt-get install libjpeg-dev libfreetype6 libfreetype6-dev zlib1g-dev
+sudo pip3 install Pillow
+
