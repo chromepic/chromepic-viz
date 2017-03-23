@@ -49,6 +49,8 @@ def read_screenshot_metadata(log_path, log_filename):
         coordinates_msg = 'Coordinates: '
         keycode_msg = 'Code: '
 
+        url_msg = 'SnapshotHandler:: HandleInputEvent'
+
         lines = f.readlines()
 
         initial_time = None
@@ -60,6 +62,9 @@ def read_screenshot_metadata(log_path, log_filename):
 
         # first line should contain date with timestamp
         start_date = None
+
+        last_url = ''
+        tab_to_url = {}
 
         if len(lines) > 0:
             dir_name = extract_attr(lines[0], 'SnapshotHandler:: Directory generated: ')
@@ -106,6 +111,10 @@ def read_screenshot_metadata(log_path, log_filename):
                 else:
                     last_snapshot_event = info
 
+                if last_url is not None:
+                    tab_to_url[output_dir] = last_url
+                    last_url = None
+
             elif line.find(trigger_msg) != -1:
                 event_id = extract_attr(line, event_id_msg)
                 time = int(extract_attr(line, time_msg))
@@ -137,7 +146,10 @@ def read_screenshot_metadata(log_path, log_filename):
                 else:
                     last_trigger = [event_id, type]
 
-    return metadata
+            elif line.find(url_msg) != -1:
+                last_url = extract_attr(line, 'URL: ')
+
+    return metadata, tab_to_url
 
 
 def time_closest(metadata, t):

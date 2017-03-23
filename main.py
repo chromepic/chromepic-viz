@@ -54,7 +54,7 @@ class LogViewer(Frame):
         self.base_dir = 'ChromePicLogs/vespa_log14/'
         self.all_tabs = self.get_all_tabs()
 
-        self.metadata_all_tabs = logs.read_screenshot_metadata(self.base_dir,
+        self.metadata_all_tabs, self.tab_to_url = logs.read_screenshot_metadata(self.base_dir,
                                                                'vespa_log14.txt')
 
         self.marker = Image.open('marker.png')
@@ -251,7 +251,9 @@ class LogViewer(Frame):
         self.vlevel = IntVar()
         for i, tab in enumerate(self.all_tabs):
             t = tab
-            self.tab_menu.add_radiobutton(label=tab, var=self.vlevel, value=i,
+            label = self.tab_to_url[tab]
+            label = util.extract_domain(label)
+            self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i,
                                           command=lambda : self.switch_to_tab(self.all_tabs[self.vlevel.get()]))
 
         try:
