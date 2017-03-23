@@ -269,6 +269,14 @@ class LogViewer(Frame):
         self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
         self.dom_dir = os.path.join(self.base_dir, 'dom_snapshots', self.tab)
 
+        if hasattr(self, 'metadata'):
+            if 't' in self.metadata[self.current_index]:
+                old_time = self.metadata[self.current_index]['t']
+            else:
+                old_time = 0
+        else:
+            old_time = 0
+
         # metadata just for this tab
         self.metadata = collections.defaultdict(dict)
         for m in self.metadata_all_tabs:
@@ -281,7 +289,9 @@ class LogViewer(Frame):
 
         if hasattr(self, 'w'):
             self.w.config(to=self.n)
-            self.switch_current_image(1)
+            index = logs.time_closest(self.metadata, old_time)
+            print('old_time: {}, index: {}'.format(old_time, index))
+            self.switch_current_image(index)
 
 
 def main():

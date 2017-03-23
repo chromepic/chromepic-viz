@@ -138,3 +138,21 @@ def read_screenshot_metadata(log_path, log_filename):
                     last_trigger = [event_id, type]
 
     return metadata
+
+
+def time_closest(metadata, t):
+    """
+
+    :param metadata:
+    :return: Index with closest time to t
+    """
+
+    closest_t = abs(metadata[0]['t'] - t)
+    closet_i = 0
+
+    for i in range(1, len(metadata)):
+        if abs(metadata[i]['t'] - t) < closest_t:
+            closest_t = abs(metadata[i]['t'] - t)
+            closet_i = i
+
+    return closet_i
