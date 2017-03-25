@@ -20,13 +20,17 @@ import util
 from dom_viewer import DomViewer
 from sys import platform as _platform
 
+import argparse
+
 
 class LogViewer(Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, dir):
         Frame.__init__(self, parent, background="white")
 
+        self.base_dir = dir
         self.parent = parent
         self.init_ui()
+
 
     def cleanup(self):
         print('Cleaning up...')
@@ -40,7 +44,7 @@ class LogViewer(Frame):
 
         self.load_data()
         self.init_menu_bar()
-        self.switch_to_tab('11_8_2016__18_41_58_0x35bb08c21c40')
+        self.switch_to_tab(self.all_tabs[0])
         self.init_snapshots()
         self.init_navigation()
         self.init_metadata()
@@ -51,11 +55,11 @@ class LogViewer(Frame):
         return sorted(list(all_tabs))
 
     def load_data(self):
-        self.base_dir = 'ChromePicLogs/vespa_log14/'
+        log_name = self.base_dir.split('/')[-1]
         self.all_tabs = self.get_all_tabs()
 
         self.metadata_all_tabs, self.tab_to_url = logs.read_screenshot_metadata(self.base_dir,
-                                                               'vespa_log14.txt')
+                                                               log_name + '.txt')
 
         self.marker = Image.open('marker.png')
 
@@ -297,9 +301,17 @@ class LogViewer(Frame):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dir', metavar='directory', type=str,
+                        help='Directory in which the log text file is contained, '
+                             'along with the screenshots and dom_snapshots directories.')
+    args = parser.parse_args()
+    dir = args.dir
+    print('Dir: ' + dir)
+
     root = tkinter.Tk()
     root.tk_setPalette(background='white')
-    app = LogViewer(root)
+    app = LogViewer(root, dir)
     wh_ratio = 1.5
     width = 1200
     height = int(width / wh_ratio)
