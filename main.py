@@ -179,7 +179,7 @@ class LogViewer(Frame):
             canvas_i = i - index + 1
             self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
             if 0 <= i < self.n:
-                self.display_labels[canvas_i]['text'] = self.metadata[i]['fname']
+                self.display_labels[canvas_i]['text'] = self.metadata[i]['fname'].split('/')[-1]
                 if i == index and hasattr(self, 'event_detail'):
                     if self.metadata[i]['trigger'] in triggers.keycode_triggers:
                         self.event_detail['text'] = 'Last key pressed: ' + str(self.metadata[i]['key'])
@@ -188,6 +188,8 @@ class LogViewer(Frame):
                             self.metadata[i]['mouse'][0],
                             self.metadata[i]['mouse'][1])
                     self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i]['trigger'])
+                    self.tab_label['text'] = 'Tab: ' + self.metadata[i]['tab']
+
                     if self.metadata[i]['abstime'] is None:
                         self.time_label['text'] = 'Time: Error'
                     else:
@@ -200,6 +202,9 @@ class LogViewer(Frame):
         metadata_frame = Frame(self)
 
         metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+
+        self.tab_label = Label(metadata_frame, text='')
+        self.tab_label.pack()
 
         self.trigger_label = Label(metadata_frame, text='')
         self.trigger_label.pack()
