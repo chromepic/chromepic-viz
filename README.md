@@ -1,5 +1,10 @@
+# Usage
+
+Simply call 'python3 main.py [log dir]'
+
 # Dependencies
 
+- Python 3
 - PIL (python imaging library)
 - tkinter
 
