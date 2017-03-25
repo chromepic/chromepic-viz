@@ -225,7 +225,8 @@ class LogViewer(Frame):
         path = os.path.join(self.base_dir, 'dom_snapshots', self.metadata[self.current_index]['dom'])
         dom = doms.read_dom(path)
         # write to temporary file
-        fname = '(text only) ' + self.tab + ': ' + self.metadata[self.current_index]['dom'][:-5] + 'txt'
+        fname = '(text only) ' + self.metadata[self.current_index]['tab'] + ': ' \
+                + self.metadata[self.current_index]['dom'].split('/')[-1][:-5] + 'txt'
         temp_path = doms.write_to_temp(dom, fname, self.tmp_dir)
 
         if _platform == 'linux' or _platform == 'linux2':
