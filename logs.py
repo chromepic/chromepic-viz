@@ -92,8 +92,8 @@ def read_screenshot_metadata(log_path, log_filename):
                 if start_date is not None:
                     absolute_time = start_date + datetime.timedelta(seconds=time_secs)
                 event_id = extract_attr(line, event_id_msg)
-                snapshot_filename = 'snapshot_{}.png'.format(snapshot_id)
-                dom_filename = 'snapshot_{}.mhtml'.format(snapshot_id)
+                snapshot_filename = os.path.join(output_dir, 'snapshot_{}.png'.format(snapshot_id))
+                dom_filename = os.path.join(output_dir, 'snapshot_{}.mhtml'.format(snapshot_id))
 
                 # lookup name corresponding to the keycode
                 key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'

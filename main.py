@@ -31,7 +31,6 @@ class LogViewer(Frame):
         self.parent = parent
         self.init_ui()
 
-
     def cleanup(self):
         print('Cleaning up...')
         shutil.rmtree(self.tmp_dir)
@@ -44,14 +43,14 @@ class LogViewer(Frame):
 
         self.load_data()
         self.init_menu_bar()
-        self.switch_to_tab(self.all_tabs[0])
+        self.switch_to_tab('All')
         self.init_snapshots()
         self.init_navigation()
         self.init_metadata()
 
     def get_all_tabs(self):
         all_tabs = set(util.immediate_subdirs(os.path.join(self.base_dir, 'screenshots')))
-        #all_tabs |= set(util.immediate_subdirs(os.path.join(self.base_dir, 'dom_snapshots')))
+        # all_tabs |= set(util.immediate_subdirs(os.path.join(self.base_dir, 'dom_snapshots')))
         return sorted(list(all_tabs))
 
     def load_data(self):
@@ -59,7 +58,7 @@ class LogViewer(Frame):
         self.all_tabs = self.get_all_tabs()
 
         self.metadata_all_tabs, self.tab_to_url = logs.read_screenshot_metadata(self.base_dir,
-                                                               log_name + '.txt')
+                                                                                log_name + '.txt')
 
         self.marker = Image.open('marker.png')
 
@@ -166,7 +165,8 @@ class LogViewer(Frame):
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    pil_img = screenshots.read_screenshot(os.path.join(self.screenshot_dir, self.metadata[i]['fname']))
+                    pil_img = screenshots.read_screenshot(
+                        os.path.join(self.base_dir, 'screenshots', self.metadata[i]['fname']))
                     # only show mouse marker on events triggered by mouse
                     if self.metadata[i]['trigger'] in triggers.mouse_position_triggers:
                         pil_img = pil_img.copy()
@@ -217,7 +217,7 @@ class LogViewer(Frame):
         self.dom_explorer_button.pack()
 
     def show_dom(self):
-        path = os.path.join(self.dom_dir, self.metadata[self.current_index]['dom'])
+        path = os.path.join(self.base_dir, 'dom_snapshots', self.metadata[self.current_index]['dom'])
         dom = doms.read_dom(path)
         # write to temporary file
         fname = '(text only) ' + self.tab + ': ' + self.metadata[self.current_index]['dom'][:-5] + 'txt'
@@ -234,8 +234,8 @@ class LogViewer(Frame):
             subprocess.call([temp_path])
 
     def show_dom_explorer(self):
-        folder_path = self.dom_dir
-        file_path = os.path.join(self.dom_dir, self.metadata[self.current_index]['dom'])
+        file_path = os.path.join(self.base_dir, 'dom_snapshots', self.metadata[self.current_index]['dom'])
+        folder_path = os.path.dirname(file_path)
 
         if _platform == 'linux' or _platform == 'linux2':
             # linux: select file in file browser
@@ -253,12 +253,17 @@ class LogViewer(Frame):
         self.tab_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Tab", menu=self.tab_menu)
         self.vlevel = IntVar()
+
+        # all tabs
+        self.tab_menu.add_radiobutton(label='All', var=self.vlevel, value=0,
+                                      command=lambda: self.switch_to_tab('All'))
+
         for i, tab in enumerate(self.all_tabs):
             t = tab
             label = self.tab_to_url[tab]
             label = util.extract_domain(label)
-            self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i,
-                                          command=lambda : self.switch_to_tab(self.all_tabs[self.vlevel.get()]))
+            self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i + 1,
+                                          command=lambda: self.switch_to_tab(self.all_tabs[self.vlevel.get() - 1]))
 
         try:
             self.master.config(menu=self.menubar)
@@ -269,11 +274,23 @@ class LogViewer(Frame):
     def switch_to_tab(self, tab_name):
         print('Switching to tab ' + tab_name)
         self.tab = tab_name
-        self.screenshot_dir = os.path.join(self.base_dir, 'screenshots', self.tab)
-        self.all_screenshots = screenshots.get_all_screenshot_names(self.screenshot_dir)
-        # assuming they're named "snapshot_x.png"
-        self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[9:-4]))
-        self.dom_dir = os.path.join(self.base_dir, 'dom_snapshots', self.tab)
+        if self.tab == 'All':
+            self.all_screenshots = []
+            for t in self.all_tabs:
+                additional_screenshots = screenshots.get_all_screenshot_names(
+                    os.path.join(self.base_dir, 'screenshots', t))
+                for i in range(len(additional_screenshots)):
+                    additional_screenshots[i] = os.path.join(t, additional_screenshots[i])
+                self.all_screenshots += additional_screenshots
+
+        else:
+            self.all_screenshots = screenshots.get_all_screenshot_names(
+                os.path.join(self.base_dir, 'screenshots', self.tab))
+            for i in range(len(self.all_screenshots)):
+                self.all_screenshots[i] = os.path.join(self.tab, self.all_screenshots[i])
+
+        # assuming they're named "tab/snapshot_x.png"
+        self.all_screenshots = sorted(self.all_screenshots, key=lambda x: int(x[x.rfind('_') + 1:-4]))
 
         if hasattr(self, 'metadata'):
             if 't' in self.metadata[self.current_index]:
@@ -286,7 +303,7 @@ class LogViewer(Frame):
         # metadata just for this tab
         self.metadata = collections.defaultdict(dict)
         for m in self.metadata_all_tabs:
-            if m['tab'] == self.tab:
+            if self.tab == 'All' or m['tab'] == self.tab:
                 m['tk_img'] = None
                 m['pil_img'] = None
                 self.metadata[len(self.metadata)] = m
@@ -295,9 +312,8 @@ class LogViewer(Frame):
 
         if hasattr(self, 'w'):
             self.w.config(to=self.n)
-            index = logs.time_closest(self.metadata, old_time)
-            print('old_time: {}, index: {}'.format(old_time, index))
-            self.switch_current_image(index)
+            index = 0  # logs.time_closest(self.metadata, old_time)   <-- Uncomment to jump to nearest time. Still has bug though.
+            self.switch_current_image(index + 1)
 
 
 def main():
