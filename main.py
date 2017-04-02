@@ -264,10 +264,15 @@ class LogViewer(Frame):
         self.tab_menu.add_radiobutton(label='All', var=self.vlevel, value=0,
                                       command=lambda: self.switch_to_tab('All'))
 
+        tab_time = {}
+        for m in self.metadata_all_tabs:
+            if m['tab'] not in tab_time:
+                tab_time[m['tab']] = m['t']
+
         for i, tab in enumerate(self.all_tabs):
-            t = tab
+            t = tab_time[tab] if tab in tab_time else '?'
             label = self.tab_to_url[tab]
-            label = util.extract_domain(label)
+            label = '{} (time: {:.1f} s)'.format(util.extract_domain(label), t)
             self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i + 1,
                                           command=lambda: self.switch_to_tab(self.all_tabs[self.vlevel.get() - 1]))
 
