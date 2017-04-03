@@ -1,15 +1,14 @@
+import argparse
+import collections
 import os
+import shutil
 import subprocess
 import tkinter
+from sys import platform as _platform
 from tempfile import mkdtemp
 from tkinter import *
 
-import sys
-
 import PIL
-import collections
-
-import shutil
 from PIL import ImageTk, Image
 
 import doms
@@ -17,10 +16,6 @@ import logs
 import screenshots
 import triggers
 import util
-from dom_viewer import DomViewer
-from sys import platform as _platform
-
-import argparse
 
 
 class LogViewer(Frame):
@@ -113,13 +108,31 @@ class LogViewer(Frame):
         hsize = int((float(img.size[1]) * float(wpercent)))
         return img.resize((new_width, hsize), PIL.Image.ANTIALIAS)
 
+    def toggle_play(self):
+        if not self.play_state:
+            self.play['text'] = '||'
+            self.rt.start()
+        else:
+            self.play['text'] = '>'
+            self.rt.stop()
+
+        self.play_state = not self.play_state
+
     def init_navigation(self):
         self._job = None
+
+        def advance():
+            self.on_switch_image(self.current_index + 2)
+        self.rt = util.RepeatedTimer(2, advance)
+
         self.nav_frame = Frame(self)
         self.nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
-        self.prev = Button(self.nav_frame, text="<", command=lambda: self.on_switch_image(self.current_index))
+        self.prev = Button(self.nav_frame, text="<-", command=lambda: self.on_switch_image(self.current_index))
         self.prev.pack(side=LEFT)
-        self.next = Button(self.nav_frame, text=">", command=lambda: self.on_switch_image(self.current_index + 2))
+        self.play_state = False
+        self.play = Button(self.nav_frame, text=">", command=self.toggle_play)
+        self.play.pack(side=RIGHT)
+        self.next = Button(self.nav_frame, text="->", command=lambda: self.on_switch_image(self.current_index + 2))
         self.next.pack(side=RIGHT)
         self.w = Scale(self.nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
                        command=self.on_switch_image)
