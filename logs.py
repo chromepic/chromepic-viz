@@ -32,7 +32,7 @@ def read_screenshot_metadata(log_path, log_filename):
     :param log_path: Path to directory where log and screenshots are in
     :param log_filename: Name of log file relative to log_path
     :return: An dict for each snapshot, consisting of:
-    (event id, filename, tab, time, absolute time, last mouse pos, last key pressed, trigger type)
+    (event id, filename, tab, time, absolute time, last mouse pos, last key pressed, trigger type, url)
     """
 
     metadata = []
@@ -99,7 +99,8 @@ def read_screenshot_metadata(log_path, log_filename):
                 key_name = keycodes.keycodes[last_keycode]['name'] if last_keycode is not None else 'None'
 
                 info = {'id': event_id, 'fname': snapshot_filename, 'dom': dom_filename, 'tab': output_dir,
-                        't': time_secs, 'abstime': absolute_time, 'mouse': last_mouse_pos, 'key': key_name}
+                        't': time_secs, 'abstime': absolute_time, 'mouse': last_mouse_pos, 'key': key_name,
+                        'url': last_url}
 
                 # trigger could come before snapshot
                 if last_trigger is not None and last_trigger[0] == event_id:
@@ -111,9 +112,8 @@ def read_screenshot_metadata(log_path, log_filename):
                 else:
                     last_snapshot_event = info
 
-                if last_url is not None:
+                if output_dir not in tab_to_url:
                     tab_to_url[output_dir] = last_url
-                    last_url = None
 
             elif line.find(trigger_msg) != -1:
                 event_id = extract_attr(line, event_id_msg)

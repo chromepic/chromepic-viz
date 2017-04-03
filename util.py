@@ -17,3 +17,10 @@ def extract_domain(url):
     if i1 == -1 or i2 == -1:
         return url
     return url[i1 + 1 : i2]
+
+
+def trunc(s, max_len):
+    if len(s) <= max_len:
+        return s
+    else:
+        return s[:max_len + 1] + ' ...'

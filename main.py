@@ -189,6 +189,7 @@ class LogViewer(Frame):
                             self.metadata[i]['mouse'][1])
                     self.trigger_label['text'] = 'Trigger: ' + str(self.metadata[i]['trigger'])
                     self.tab_label['text'] = 'Tab: ' + self.metadata[i]['tab']
+                    self.url_label['text'] = 'URL: ' + util.trunc(self.metadata[i]['url'], 50)
 
                     if self.metadata[i]['abstime'] is None:
                         self.time_label['text'] = 'Time: Error'
@@ -205,6 +206,9 @@ class LogViewer(Frame):
 
         self.tab_label = Label(metadata_frame, text='')
         self.tab_label.pack()
+
+        self.url_label = Label(metadata_frame, text='')
+        self.url_label.pack()
 
         self.trigger_label = Label(metadata_frame, text='')
         self.trigger_label.pack()
