@@ -172,14 +172,14 @@ class LogViewer(Frame):
                 continue
 
             # load lazily
-            if not hasattr(self.metadata[i], 'pil_img') or self.metadata[i]['pil_img'] is None:
+            if 'pil_img' not in self.metadata[i] or self.metadata[i]['pil_img'] is None:
                 # img not loaded yet
                 if i < 0 or i >= self.n or self.metadata[i]['fname'] not in self.all_screenshots:
                     # dummy image at index=0 to prevent index out of bounds
                     pil_img = self.dummy_img
                 else:
-                    pil_img = screenshots.read_screenshot(
-                        os.path.join(self.base_dir, 'screenshots', self.metadata[i]['fname']))
+                    path = os.path.join(self.base_dir, 'screenshots', self.metadata[i]['fname'])
+                    pil_img = screenshots.read_screenshot(path)
                     # only show mouse marker on events triggered by mouse
                     if self.metadata[i]['trigger'] in triggers.mouse_position_triggers:
                         pil_img = pil_img.copy()
@@ -287,8 +287,8 @@ class LogViewer(Frame):
                 tab_time[m['tab']] = m['t']
 
         for i, tab in enumerate(self.all_tabs):
-            t = tab_time[tab] if tab in tab_time else '?'
-            label = self.tab_to_url[tab]
+            t = tab_time[tab] if tab in tab_time else -1
+            label = self.tab_to_url[tab] if tab in self.tab_to_url else 'New tab'
             label = '{} (time: {:.1f} s)'.format(util.extract_domain(label), t)
             self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i + 1,
                                           command=lambda: self.switch_to_tab(self.all_tabs[self.vlevel.get() - 1]))

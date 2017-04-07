@@ -5,7 +5,7 @@ import keycodes
 import triggers
 
 
-def extract_attr(line, msg):
+def extract_attr(line, msg, tuples=True):
     """
     Extracts attribute from line, assuming it is in this form:
     [msg1][attr1], [msg2][attr2], ...
@@ -18,7 +18,7 @@ def extract_attr(line, msg):
     # if this message is last item, there is no comma after it
     end = len(line) if end == -1 else end
 
-    if -1 < line.find(',', end + 1) < line.find(':', end + 1):
+    if tuples and (-1 < line.find(',', end + 1) < line.find(':', end + 1)):
         # this probably means the attribute is a tuble, for instance 'Coordinates: 471, 1',
         # so return a tuple of those two values
         return line[msg_pos:end].strip(), extract_attr(line, msg + line[msg_pos:end] + ',')
@@ -49,6 +49,8 @@ def read_screenshot_metadata(log_path, log_filename):
         coordinates_msg = 'Coordinates: '
         keycode_msg = 'Code: '
 
+        dir_generated_msg = 'SnapshotHandler:: Directory generated: '
+
         url_msg = 'SnapshotHandler:: HandleInputEvent'
 
         lines = f.readlines()
@@ -65,16 +67,7 @@ def read_screenshot_metadata(log_path, log_filename):
 
         last_url = ''
         tab_to_url = {}
-
-        if len(lines) > 0:
-            dir_name = extract_attr(lines[0], 'SnapshotHandler:: Directory generated: ')
-            date_str = dir_name[:dir_name.rfind('_')]
-            try:
-                start_date = datetime.datetime.strptime(date_str, '%m_%d_%Y__%H_%M_%S')
-                initial_time = int(extract_attr(lines[0], time_msg))
-            except ValueError:
-                start_date = None
-                pass
+        date_str = '0'
 
         # Parse logs as follows: iterate through lines. We don't know if the line with the trigger comes first, or the line with
         # the snapshot info. So if we come accross a trigger line, set the trigger info for the last snapshot info if the event ids
@@ -82,6 +75,18 @@ def read_screenshot_metadata(log_path, log_filename):
         # event ids match.
 
         for line in lines:
+
+            if date_str == '0' and dir_generated_msg in line:
+                dir_name = extract_attr(line, dir_generated_msg)
+                date_str = dir_name[:dir_name.rfind('_')]
+                try:
+                    start_date = datetime.datetime.strptime(date_str, '%m_%d_%Y__%H_%M_%S')
+                    initial_time = int(extract_attr(line, time_msg))
+                except ValueError:
+                    start_date = None
+                    pass
+
+
             if line.find(snapshot_msg) != -1:
                 snapshot_id = extract_attr(line, snapshot_id_msg)
                 output_dir = extract_attr(line, output_dir_msg)
@@ -147,7 +152,7 @@ def read_screenshot_metadata(log_path, log_filename):
                     last_trigger = [event_id, type]
 
             elif line.find(url_msg) != -1:
-                last_url = extract_attr(line, 'URL: ')
+                last_url = extract_attr(line, 'URL: ', tuples=False)
 
     return metadata, tab_to_url
 
