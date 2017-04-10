@@ -96,12 +96,15 @@ class LogViewer(Frame):
             self.displays[i].pack(fill=BOTH, expand=True)
 
     def resize(self, canvas_i, width):
-        img_i = canvas_i + self.current_index - 1
-        if self.metadata[img_i]['tk_img'].width() != width:  # it may already have been converted to correct size
-            self.metadata[img_i]['tk_img'] = ImageTk.PhotoImage(
-                self.resize_keep_aspect(width, self.metadata[img_i]['pil_img']))
-        self.displays[canvas_i].delete("IMG")
-        self.displays[canvas_i].create_image(0, 0, image=self.metadata[img_i]['tk_img'], anchor=NW, tags="IMG")
+        try:
+            img_i = canvas_i + self.current_index - 1
+            if self.metadata[img_i]['tk_img'].width() != width:  # it may already have been converted to correct size
+                self.metadata[img_i]['tk_img'] = ImageTk.PhotoImage(
+                    self.resize_keep_aspect(width, self.metadata[img_i]['pil_img']))
+            self.displays[canvas_i].delete("IMG")
+            self.displays[canvas_i].create_image(0, 0, image=self.metadata[img_i]['tk_img'], anchor=NW, tags="IMG")
+        except AttributeError:
+            pass
 
     def resize_keep_aspect(self, new_width, img):
         wpercent = (new_width / float(img.size[0]))
@@ -112,9 +115,13 @@ class LogViewer(Frame):
         if not self.play_state:
             self.play['text'] = '||'
             self.rt.start()
+            self.prev['state'] = 'disabled'
+            self.next['state'] = 'disabled'
         else:
             self.play['text'] = '>'
             self.rt.stop()
+            self.prev['state'] = 'normal'
+            self.next['state'] = 'normal'
 
         self.play_state = not self.play_state
 
@@ -122,23 +129,31 @@ class LogViewer(Frame):
         self._job = None
 
         def advance():
-            self.on_switch_image(self.current_index + 2)
-        self.rt = util.RepeatedTimer(2, advance)
+            self.switch_current_image(self.current_index + 2)
+            if self.current_index >= len(self.metadata) - 2:
+                self.toggle_play()
+                return False
+            else:
+                return True
+
+        self.play_option = 'r1'
+        self.rt = util.RepeatedTimer(advance, self)
 
         self.nav_frame = Frame(self)
         self.nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
-        self.prev = Button(self.nav_frame, text="<-", command=lambda: self.on_switch_image(self.current_index))
+        self.prev = Button(self.nav_frame, text="<-", command=lambda: self.on_switch_image_delayed(self.current_index))
         self.prev.pack(side=LEFT)
         self.play_state = False
         self.play = Button(self.nav_frame, text=">", command=self.toggle_play)
         self.play.pack(side=RIGHT)
-        self.next = Button(self.nav_frame, text="->", command=lambda: self.on_switch_image(self.current_index + 2))
+        self.next = Button(self.nav_frame, text="->",
+                           command=lambda: self.on_switch_image_delayed(self.current_index + 2))
         self.next.pack(side=RIGHT)
         self.w = Scale(self.nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
-                       command=self.on_switch_image)
+                       command=self.on_switch_image_delayed)
         self.w.pack(expand=True, fill=BOTH)
 
-    def on_switch_image(self, index):
+    def on_switch_image_delayed(self, index):
         # this logic makes the image switch only if a certain amount of time has elapsed since the last scale change,
         # for performance reasons.
         # (see http://stackoverflow.com/questions/3966303/tkinter-slider-how-to-trigger-the-event-only-when-the-iteraction-is-complete)
@@ -155,8 +170,9 @@ class LogViewer(Frame):
         self.current_index = index
 
         if hasattr(self, 'prev'):
-            self.prev['state'] = 'normal'
-            self.next['state'] = 'normal'
+            if not self.play_state:
+                self.prev['state'] = 'normal'
+                self.next['state'] = 'normal'
 
             if index == 0:
                 self.prev['state'] = 'disabled'
@@ -190,7 +206,8 @@ class LogViewer(Frame):
                 self.metadata[i]['tk_img'] = ImageTk.PhotoImage(pil_img)
 
             canvas_i = i - index + 1
-            self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
+            if self.metadata[i]['pil_img'] is not None:  # if false loading the image went wrong
+                self.resize(canvas_i, max(100, self.displays[canvas_i].winfo_width()))
             if 0 <= i < self.n:
                 self.display_labels[canvas_i]['text'] = self.metadata[i]['fname'].split('/')[-1]
                 if i == index and hasattr(self, 'event_detail'):
@@ -273,6 +290,7 @@ class LogViewer(Frame):
     def init_menu_bar(self):
         self.menubar = Menu(self)
 
+        # Tab menu
         self.tab_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Tab", menu=self.tab_menu)
         self.vlevel = IntVar()
@@ -293,11 +311,38 @@ class LogViewer(Frame):
             self.tab_menu.add_radiobutton(label=label, var=self.vlevel, value=i + 1,
                                           command=lambda: self.switch_to_tab(self.all_tabs[self.vlevel.get() - 1]))
 
+        # Play menu
+        self.play_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Play speed", menu=self.play_menu)
+        self.vplay = IntVar()
+
+        self.play_menu.add_radiobutton(label='Real time', var=self.vplay, value=0,
+                                       command=lambda: self.set_play_option('r1'))
+        self.play_menu.add_radiobutton(label='Real time x 0.5', var=self.vplay, value=1,
+                                       command=lambda: self.set_play_option('r0.5'))
+        self.play_menu.add_radiobutton(label='Real time x 2', var=self.vplay, value=2,
+                                       command=lambda: self.set_play_option('r2'))
+        self.play_menu.add_radiobutton(label='Real time x 4', var=self.vplay, value=3,
+                                       command=lambda: self.set_play_option('r4'))
+
+        self.play_menu.add_radiobutton(label='Constant time 0.5s', var=self.vplay, value=5,
+                                       command=lambda: self.set_play_option('c0.5'))
+        self.play_menu.add_radiobutton(label='Constant time 1s', var=self.vplay, value=6,
+                                       command=lambda: self.set_play_option('c1'))
+        self.play_menu.add_radiobutton(label='Constant time 2s', var=self.vplay, value=7,
+                                       command=lambda: self.set_play_option('c2'))
+        self.play_menu.add_radiobutton(label='Constant time 4s', var=self.vplay, value=8,
+                                       command=lambda: self.set_play_option('c4'))
+
         try:
             self.master.config(menu=self.menubar)
         except AttributeError:
             # master is a toplevel window (Python 1.4/Tkinter 1.63)
             self.master.tk.call(self.parent, "config", "-menu", self.menubar)
+
+    def set_play_option(self, option):
+        self.play_option = option
+        self.rt.set_play_option(self.play_option)
 
     def switch_to_tab(self, tab_name):
         print('Switching to tab ' + tab_name)

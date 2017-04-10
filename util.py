@@ -34,27 +34,43 @@ def trunc(s, max_len):
 
 # from http://stackoverflow.com/questions/474528/what-is-the-best-way-to-repeatedly-execute-a-function-every-x-seconds-in-python
 class RepeatedTimer(object):
-  def __init__(self, interval, function, *args, **kwargs):
-    self._timer = None
-    self.interval = interval
-    self.function = function
-    self.args = args
-    self.kwargs = kwargs
-    self.is_running = False
-    self.next_call = time.time()
+    def __init__(self, function, *args, **kwargs):
+        self._timer = None
+        self.function = function
+        self.args = args[0]
+        self.kwargs = kwargs
+        self.is_running = False
+        self.next_call = time.time()
+        self.set_play_option('r1')
 
-  def _run(self):
-    self.is_running = False
-    self.start()
-    self.function(*self.args, **self.kwargs)
+    def set_play_option(self, option):
+        self.delay = (option[0], float(option[1:]))
 
-  def start(self):
-    if not self.is_running:
-      self.next_call += self.interval
-      self._timer = threading.Timer(self.next_call - time.time(), self._run)
-      self._timer.start()
-      self.is_running = True
+    def _run(self):
+        self.is_running = False
+        print('function()')
+        if self.function():
+            self.start()
 
-  def stop(self):
-    self._timer.cancel()
-    self.is_running = False
+    def start(self):
+        if not self.is_running:
+            try:
+                if self.args.current_index < len(self.args.metadata) - 2:
+                    if self.delay[0] == 'r':
+                        # real time
+                        t_diff_to_next = self.args.metadata[self.args.current_index + 1]['t'] \
+                                         - self.args.metadata[self.args.current_index]['t']
+                        t_diff_to_next /= self.delay[1]
+                    else:
+                        # constant time
+                        t_diff_to_next = self.delay[1]
+                    print('waiting {} seconds (current index is {})'.format(t_diff_to_next, self.args.current_index))
+                    self._timer = threading.Timer(t_diff_to_next, self._run)
+                    self._timer.start()
+                    self.is_running = True
+            except KeyError:
+                pass
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
