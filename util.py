@@ -47,29 +47,29 @@ class RepeatedTimer(object):
         self.delay = (option[0], float(option[1:]))
 
     def _run(self):
-        self.is_running = False
-        print('function()')
-        if self.function():
-            self.start()
+        if self.is_running:
+            if self.function():
+                self.start()
+        else:
+            print('Stopped.')
 
     def start(self):
-        if not self.is_running:
-            try:
-                if self.args.current_index < len(self.args.metadata) - 2:
-                    if self.delay[0] == 'r':
-                        # real time
-                        t_diff_to_next = self.args.metadata[self.args.current_index + 1]['t'] \
-                                         - self.args.metadata[self.args.current_index]['t']
-                        t_diff_to_next /= self.delay[1]
-                    else:
-                        # constant time
-                        t_diff_to_next = self.delay[1]
-                    print('waiting {} seconds (current index is {})'.format(t_diff_to_next, self.args.current_index))
-                    self._timer = threading.Timer(t_diff_to_next, self._run)
-                    self._timer.start()
-                    self.is_running = True
-            except KeyError:
-                pass
+        self.is_running = True
+        try:
+            if self.args.current_index < len(self.args.metadata) - 2:
+                if self.delay[0] == 'r':
+                    # real time
+                    t_diff_to_next = self.args.metadata[self.args.current_index + 1]['t'] \
+                                     - self.args.metadata[self.args.current_index]['t']
+                    t_diff_to_next /= self.delay[1]
+                else:
+                    # constant time
+                    t_diff_to_next = self.delay[1]
+                print('waiting {} seconds (current index is {})'.format(t_diff_to_next, self.args.current_index))
+                self._timer = threading.Timer(t_diff_to_next, self._run)
+                self._timer.start()
+        except KeyError:
+            pass
 
     def stop(self):
         self._timer.cancel()
