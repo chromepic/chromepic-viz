@@ -34,7 +34,8 @@ class LogViewer(Frame):
     def init_ui(self):
         self.parent.title("ChromePic Viewer")
         self.pack(fill=BOTH, expand=True)
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
         self.load_data()
         self.init_menu_bar()
@@ -80,13 +81,14 @@ class LogViewer(Frame):
 
         padx, pady = 20, 20
         # previous
-        self.display_frames[0].grid(row=0, column=3, columnspan=1, rowspan=1, padx=padx, pady=pady,
+        self.display_frames[0].grid(row=0, column=0, columnspan=1, rowspan=1, padx=padx, pady=pady,
                                     sticky=N + S + E + W)
         # current
-        self.display_frames[1].grid(row=0, column=0, columnspan=2, rowspan=2, padx=padx, pady=pady,
+        self.display_frames[1].grid(row=0, column=1, columnspan=1, rowspan=1, padx=padx, pady=pady,
                                     sticky=N + S + E + W)
         # next
-        self.display_frames[2].grid(row=1, column=3, columnspan=1, rowspan=1, padx=padx, sticky=N + S + E + W)
+        self.display_frames[2].grid(row=0, column=2, columnspan=1, rowspan=1, padx=padx, pady=pady,
+                                    sticky=N + S + E + W)
 
         for i in range(3):
             self.display_labels[i].pack()
@@ -140,18 +142,21 @@ class LogViewer(Frame):
         self.rt = util.RepeatedTimer(advance, self)
 
         self.nav_frame = Frame(self)
-        self.nav_frame.grid(row=3, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+        self.nav_frame.grid(row=7, column=0, columnspan=4, padx=10, pady=0, sticky=N + S + E + W)
         self.prev = Button(self.nav_frame, text="<-", command=lambda: self.on_switch_image_delayed(self.current_index))
-        self.prev.pack(side=LEFT)
+        # the slider is lower than the other buttons if no padding is added (for whatever reason) so add
+        # top padding to the buttons to compensate for that
+        button_padding_top = 13
+        self.prev.pack(side=LEFT, pady=(button_padding_top, 0))
         self.play_state = False
         self.play = Button(self.nav_frame, text=">", command=self.toggle_play)
-        self.play.pack(side=RIGHT)
+        self.play.pack(side=RIGHT, pady=(button_padding_top, 0))
         self.next = Button(self.nav_frame, text="->",
                            command=lambda: self.on_switch_image_delayed(self.current_index + 2))
-        self.next.pack(side=RIGHT)
+        self.next.pack(side=RIGHT, pady=(button_padding_top, 0))
         self.w = Scale(self.nav_frame, from_=1, to=self.n, orient=HORIZONTAL,
                        command=self.on_switch_image_delayed)
-        self.w.pack(expand=True, fill=BOTH)
+        self.w.pack(expand=True, fill=BOTH, padx=10)
 
     def on_switch_image_delayed(self, index):
         # this logic makes the image switch only if a certain amount of time has elapsed since the last scale change,
@@ -232,7 +237,7 @@ class LogViewer(Frame):
     def init_metadata(self):
         metadata_frame = Frame(self)
 
-        metadata_frame.grid(row=5, column=0, columnspan=4, padx=0, pady=0, sticky=N + S + E + W)
+        metadata_frame.grid(row=10, column=0, columnspan=4, padx=0, pady=20, sticky=N + S + E + W)
 
         self.tab_label = Label(metadata_frame, text='')
         self.tab_label.pack()
@@ -401,7 +406,7 @@ def main():
     root = tkinter.Tk()
     root.tk_setPalette(background='white')
     app = LogViewer(root, dir)
-    wh_ratio = 1.5
+    wh_ratio = 1.9
     width = 1200
     height = int(width / wh_ratio)
     root.geometry("{}x{}+100+100".format(width, height))
