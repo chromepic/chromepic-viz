@@ -2,6 +2,21 @@
 
 Simply call 'python3 main.py [log dir]'
 
+The log dir should have the following structure:
+
+
+    [log dir]
+
+        /dom_snapshots
+            /[tab1]
+            /[tab2]
+            /...
+        /screenshots
+            /[tab1]
+            /[tab2]
+            /...
+        [log dir].txt
+
 # Dependencies
 
 - <b>Python 3</b>
