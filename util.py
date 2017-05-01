@@ -49,12 +49,11 @@ class RepeatedTimer(object):
     def _run(self):
         if self.is_running:
             if self.function():
-                self.start()
+                self._go()
         else:
             print('Stopped.')
 
-    def start(self):
-        self.is_running = True
+    def _go(self):
         try:
             if self.args.current_index < len(self.args.metadata) - 2:
                 if self.delay[0] == 'r':
@@ -70,6 +69,10 @@ class RepeatedTimer(object):
                 self._timer.start()
         except KeyError:
             pass
+
+    def start(self):
+        self.is_running = True
+        self._go()
 
     def stop(self):
         self._timer.cancel()
